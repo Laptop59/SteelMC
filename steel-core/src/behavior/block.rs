@@ -277,6 +277,7 @@ pub(crate) fn simple_waterlogged_is_liquid_container(state: BlockStateId) -> boo
 
 /// Gets random loot from a given loot table reference and other factors, and returns
 /// each item from it in a [`Vec`].
+#[must_use]
 pub(crate) fn drop_from_block_interact_loot_table(
     key: LootTableRef,
     interacted_block_state: BlockStateId,
