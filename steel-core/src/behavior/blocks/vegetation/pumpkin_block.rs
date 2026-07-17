@@ -20,7 +20,7 @@ use steel_registry::{
 };
 use steel_utils::axis::Axis;
 use steel_utils::types::{InteractionHand, UpdateFlags};
-use steel_utils::{BlockPos, BlockStateId, Direction};
+use steel_utils::{BlockPos, BlockStateId};
 
 /// Behavior for pumpkins.
 #[block_behavior]
@@ -72,8 +72,7 @@ impl BlockBehavior for PumpkinBlock {
 
         let clicked_direction = hit_result.direction;
         let direction = if clicked_direction.axis() == Axis::Y {
-            let (yaw, _) = player.rotation();
-            Direction::from_yaw(yaw).opposite()
+            player.direction().opposite()
         } else {
             clicked_direction
         };
