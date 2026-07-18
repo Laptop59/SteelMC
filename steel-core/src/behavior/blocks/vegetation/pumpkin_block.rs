@@ -100,7 +100,6 @@ impl BlockBehavior for PumpkinBlock {
                 ),
                 Arc::downgrade(world),
             ));
-            entity.set_default_pickup_delay();
 
             if let Err(error) = world.try_add_entity(entity) {
                 log::warn!("Failed to drop item stack entity: {error}");
