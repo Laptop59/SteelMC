@@ -134,7 +134,7 @@ impl BlockBehavior for SweetBerryBushBlock {
         pos: BlockPos,
         player: &Player,
         _hit_result: &BlockHitResult,
-        inv: &mut InventoryAccess,
+        _inv: &mut InventoryAccess,
     ) -> InteractionResult {
         let age = state.get_value(&BlockStateProperties::AGE_3);
         if age <= 1 {
@@ -143,16 +143,14 @@ impl BlockBehavior for SweetBerryBushBlock {
 
         let mut rng = rand::rng();
 
-        let items = inv.with_item(|item_stack| {
-            drop_from_block_interact_loot_table(
-                &vanilla_loot_tables::HARVEST_SWEET_BERRY_BUSH,
-                state,
-                world.get_block_entity(pos),
-                Some(item_stack),
-                Some(player),
-                &mut rng,
-            )
-        });
+        let items = drop_from_block_interact_loot_table(
+            &vanilla_loot_tables::HARVEST_SWEET_BERRY_BUSH,
+            state,
+            world.get_block_entity(pos),
+            None,
+            Some(player),
+            &mut rng,
+        );
 
         for item in items {
             world.pop_resource(pos, item);
