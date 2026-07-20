@@ -9,7 +9,7 @@ use std::sync::{Arc, Weak};
 use glam::DVec3;
 use simdnbt::borrow::NbtCompound as BorrowedNbtCompoundView;
 use simdnbt::owned::NbtCompound;
-use steel_macros::{entity_behavior, entity_impl};
+use steel_macros::entity_behavior;
 use steel_protocol::packets::game::SoundSource;
 use steel_registry::blocks::block_state_ext::BlockStateExt as _;
 use steel_registry::data_components::vanilla_components::FIREWORKS;
@@ -350,7 +350,6 @@ impl FireworkRocketEntity {
     }
 }
 
-#[entity_impl(class(projectile))]
 impl Entity for FireworkRocketEntity {
     fn base(&self) -> &EntityBase {
         &self.base

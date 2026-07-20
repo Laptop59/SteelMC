@@ -1,6 +1,7 @@
 //! This module contains entity-related traits and types.
 
 use std::{
+    any::try_as_dyn,
     borrow::Cow,
     sync::{Arc, LazyLock, Weak},
 };
@@ -49,8 +50,8 @@ use steel_utils::entity_events::EntityStatus;
 use steel_utils::locks::SyncMutex;
 use steel_utils::types::{Difficulty, InteractionHand};
 use steel_utils::{
-    BlockPos, BlockStateId, ChunkPos, Direction, ErasedType, Identifier, UuidExt as _, WorldAabb,
-    axis::Axis, block_util::FoundRectangle, text::DisplayResolutor,
+    BlockPos, BlockStateId, ChunkPos, Direction, Downcast as _, ErasedType, Identifier,
+    UuidExt as _, WorldAabb, axis::Axis, block_util::FoundRectangle, text::DisplayResolutor,
 };
 use text_components::{
     Modifier as _, TextComponent, interactivity::HoverEvent, translation::TranslatedMessage,
@@ -774,8 +775,7 @@ pub use callback::{
 };
 pub(crate) use entity::apply_entity_look_at;
 pub use entity::{
-    AcceptedClientMovement, AcceptedClientMovementOutcome, Entity, EntityCapabilities,
-    EntityEventSource, ExperienceOrbMergeEntity, ItemMergeEntity, LeashFenceKnot,
+    AcceptedClientMovement, AcceptedClientMovementOutcome, Entity, EntityEventSource,
 };
 pub use fluid_contact::EntityFluidContact;
 pub use inside_block_effects::{

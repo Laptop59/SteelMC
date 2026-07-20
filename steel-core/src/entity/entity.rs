@@ -39,170 +39,6 @@ impl<T: Entity> EntityEventSource for T {
     }
 }
 
-/// Behavior required for vanilla dropped-item merging.
-pub trait ItemMergeEntity: Entity {
-    /// Returns whether this dropped item can merge with nearby dropped items.
-    fn is_mergeable_item_entity(&self) -> bool;
-
-    /// Attempts to merge this dropped item with another mergeable dropped item.
-    fn try_merge_item_entity(&self, other: &dyn ItemMergeEntity);
-
-    /// Returns the item stack used by merge comparisons.
-    fn item_merge_stack(&self) -> ItemStack;
-
-    /// Returns the vanilla target owner used by merge comparisons.
-    fn item_merge_owner(&self) -> Option<Uuid>;
-
-    /// Returns pickup delay and age used when combining item entities.
-    fn item_merge_timing(&self) -> (i32, i32);
-
-    /// Applies the merged destination stack and combined timing.
-    fn apply_item_merge_destination(&self, stack: ItemStack, pickup_delay: i32, age: i32);
-
-    /// Applies the merged source remainder, or removes the source when empty.
-    fn apply_item_merge_source(&self, stack: ItemStack);
-}
-
-/// Behavior required for vanilla experience-orb grouping and merging.
-pub trait ExperienceOrbMergeEntity: Entity {
-    /// Returns whether this orb group can merge with the given vanilla merge key.
-    fn can_merge_experience_orb(&self, merge_id: i32, value: i32) -> bool;
-
-    /// Tries to absorb a freshly awarded orb value into this orb group.
-    fn try_absorb_awarded_experience_orb(&self, merge_id: i32, value: i32) -> bool;
-
-    /// Tries to merge `other` into this orb group.
-    fn try_absorb_experience_orb(
-        &self,
-        other: &dyn ExperienceOrbMergeEntity,
-        merge_id: i32,
-        value: i32,
-    ) -> bool;
-
-    /// Returns merge count and age for another orb group to absorb.
-    fn experience_orb_merge_state(&self) -> (i32, i32);
-}
-
-/// Behavior for leash holders that save as a fence-knot block position.
-pub trait LeashFenceKnot: Entity {
-    /// Returns the fence block this leash knot is attached to.
-    fn leash_fence_pos(&self) -> BlockPos;
-}
-
-/// Explicit behavior capabilities exposed by a concrete entity implementation.
-///
-/// This mirrors vanilla `instanceof` branches without relying on `Any` or
-/// introducing a shared implementation hierarchy. Concrete entities should
-/// expose these through the `#[entity_impl(class(...), interfaces(...))]`
-/// macro so missing trait impls fail at compile time.
-pub struct EntityCapabilities<'a> {
-    projectile: Option<&'a dyn Projectile>,
-    player: Option<&'a Player>,
-    living: Option<&'a dyn LivingEntity>,
-    mob: Option<&'a dyn Mob>,
-    pathfinder_mob: Option<&'a dyn PathfinderMob>,
-    animal: Option<&'a dyn Animal>,
-    item_steerable: Option<&'a dyn ItemSteerable>,
-    item_merge_entity: Option<&'a dyn ItemMergeEntity>,
-    experience_orb_merge_entity: Option<&'a dyn ExperienceOrbMergeEntity>,
-    leash_fence_knot: Option<&'a dyn LeashFenceKnot>,
-}
-
-impl<'a> EntityCapabilities<'a> {
-    /// Returns an entity capability set with no specialized behavior.
-    #[must_use]
-    pub const fn none() -> Self {
-        Self {
-            projectile: None,
-            player: None,
-            living: None,
-            mob: None,
-            pathfinder_mob: None,
-            animal: None,
-            item_steerable: None,
-            item_merge_entity: None,
-            experience_orb_merge_entity: None,
-            leash_fence_knot: None,
-        }
-    }
-
-    /// Exposes projectile behavior for this entity.
-    #[must_use]
-    pub const fn with_projectile(mut self, projectile: &'a dyn Projectile) -> Self {
-        self.projectile = Some(projectile);
-        self
-    }
-
-    /// Exposes player-specific behavior for this entity.
-    #[must_use]
-    pub const fn with_player(mut self, player: &'a Player) -> Self {
-        self.player = Some(player);
-        self
-    }
-
-    /// Exposes living-entity behavior for this entity.
-    #[must_use]
-    pub const fn with_living(mut self, living: &'a dyn LivingEntity) -> Self {
-        self.living = Some(living);
-        self
-    }
-
-    /// Exposes mob behavior for this entity.
-    #[must_use]
-    pub const fn with_mob(mut self, mob: &'a dyn Mob) -> Self {
-        self.mob = Some(mob);
-        self
-    }
-
-    /// Exposes pathfinder-mob behavior for this entity.
-    #[must_use]
-    pub const fn with_pathfinder_mob(mut self, pathfinder_mob: &'a dyn PathfinderMob) -> Self {
-        self.pathfinder_mob = Some(pathfinder_mob);
-        self
-    }
-
-    /// Exposes animal behavior for this entity.
-    #[must_use]
-    pub const fn with_animal(mut self, animal: &'a dyn Animal) -> Self {
-        self.animal = Some(animal);
-        self
-    }
-
-    /// Exposes item-steerable behavior for this entity.
-    #[must_use]
-    pub const fn with_item_steerable(mut self, item_steerable: &'a dyn ItemSteerable) -> Self {
-        self.item_steerable = Some(item_steerable);
-        self
-    }
-
-    /// Exposes dropped-item merge behavior for this entity.
-    #[must_use]
-    pub const fn with_item_merge_entity(
-        mut self,
-        item_merge_entity: &'a dyn ItemMergeEntity,
-    ) -> Self {
-        self.item_merge_entity = Some(item_merge_entity);
-        self
-    }
-
-    /// Exposes experience-orb merge behavior for this entity.
-    #[must_use]
-    pub const fn with_experience_orb_merge_entity(
-        mut self,
-        experience_orb_merge_entity: &'a dyn ExperienceOrbMergeEntity,
-    ) -> Self {
-        self.experience_orb_merge_entity = Some(experience_orb_merge_entity);
-        self
-    }
-
-    /// Exposes leash fence-knot behavior for this entity.
-    #[must_use]
-    pub const fn with_leash_fence_knot(mut self, leash_fence_knot: &'a dyn LeashFenceKnot) -> Self {
-        self.leash_fence_knot = Some(leash_fence_knot);
-        self
-    }
-}
-
 /// A trait for entities.
 ///
 /// This trait provides the core functionality for entities.
@@ -223,7 +59,7 @@ impl<'a> EntityCapabilities<'a> {
 ///     // All other common methods use defaults from EntityBase!
 /// }
 /// ```
-pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
+pub trait Entity: EntityEventSource + ErasedType + Send + Sync + 'static {
     /// Returns a reference to the entity's shared vanilla base fields.
     fn base(&self) -> &EntityBase;
 
@@ -243,11 +79,6 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
     /// broadcastable; players override this for spectator visibility rules.
     fn broadcast_to_player(&self, _player: &Player) -> bool {
         true
-    }
-
-    /// Returns specialized behavior capabilities exposed by this entity.
-    fn capabilities(&self) -> EntityCapabilities<'_> {
-        EntityCapabilities::none()
     }
 
     /// Gets the entity's unique network ID (session-local).
@@ -1069,8 +900,7 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Runs only vanilla `Entity.baseTick` behavior.
     ///
-    /// Subtype base-tick chains call this from their owner trait instead of
-    /// discovering subtype behavior through runtime capabilities.
+    /// Subtype base-tick chains call this from their owner trait.
     fn entity_base_tick(&self) {
         self.base().advance_base_tick_state();
         self.handle_portal();
@@ -1234,7 +1064,7 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
     /// Returns whether this entity may enter a portal.
     ///
     /// Mirrors vanilla `Entity.canUsePortal`, including `LivingEntity` sleeping
-    /// suppression through exposed behavior capabilities.
+    /// suppression.
     fn can_use_portal(&self, ignore_passenger: bool) -> bool {
         let entity_type = self.entity_type();
         if entity_type == &vanilla_entities::FISHING_BOBBER
@@ -1599,23 +1429,19 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Returns this entity as a projectile when it has projectile behavior.
     fn as_projectile(&self) -> Option<&dyn Projectile> {
-        self.capabilities().projectile
+        try_as_dyn::<Self, dyn Projectile>(self)
     }
 
     /// Returns this entity as a living entity when it has living behavior.
     ///
-    /// Mirrors vanilla's frequent `instanceof LivingEntity` branches without
-    /// requiring core code to downcast through `Any`.
+    /// Mirrors vanilla's frequent `instanceof LivingEntity` branches.
     fn as_living_entity(&self) -> Option<&dyn LivingEntity> {
-        self.capabilities().living
+        try_as_dyn::<Self, dyn LivingEntity>(self)
     }
 
     /// Returns this entity as a player when it is the concrete server player.
-    ///
-    /// Mirrors vanilla player-only branches without requiring core code to
-    /// downcast through `Any`.
     fn as_player(&self) -> Option<&Player> {
-        self.capabilities().player
+        self.downcast_ref::<Player>()
     }
 
     /// Visits vanilla `Entity.getWeaponItem` without copying inventory state.
@@ -1634,10 +1460,9 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Returns this entity as a pathfinder mob when it has pathfinding behavior.
     ///
-    /// Mirrors vanilla's frequent `instanceof PathfinderMob` branches without
-    /// requiring core code to downcast through `Any`.
+    /// Mirrors vanilla's frequent `instanceof PathfinderMob` branches.
     fn as_pathfinder_mob(&self) -> Option<&dyn PathfinderMob> {
-        self.capabilities().pathfinder_mob
+        try_as_dyn::<Self, dyn PathfinderMob>(self)
     }
 
     /// Returns true for entities that implement vanilla mob behavior.
@@ -1647,10 +1472,9 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Returns this entity as a mob when it has mob behavior.
     ///
-    /// Mirrors vanilla's frequent `instanceof Mob` branches without requiring
-    /// core code to downcast through `Any`.
+    /// Mirrors vanilla's frequent `instanceof Mob` branches.
     fn as_mob(&self) -> Option<&dyn Mob> {
-        self.capabilities().mob
+        try_as_dyn::<Self, dyn Mob>(self)
     }
 
     /// Returns true for entities that implement vanilla animal behavior.
@@ -1660,10 +1484,9 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Returns this entity as an animal when it has animal behavior.
     ///
-    /// Mirrors vanilla's frequent `instanceof Animal` branches without
-    /// requiring core code to downcast through `Any`.
+    /// Mirrors vanilla's frequent `instanceof Animal` branches.
     fn as_animal(&self) -> Option<&dyn Animal> {
-        self.capabilities().animal
+        try_as_dyn::<Self, dyn Animal>(self)
     }
 
     /// Returns true for entities that implement vanilla item-steered boosts.
@@ -1673,25 +1496,9 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync {
 
     /// Returns this entity as item steerable when it has item-steering behavior.
     ///
-    /// Mirrors vanilla's `instanceof ItemSteerable` branches without requiring
-    /// core code to downcast through `Any`.
+    /// Mirrors vanilla's `instanceof ItemSteerable` branches.
     fn as_item_steerable(&self) -> Option<&dyn ItemSteerable> {
-        self.capabilities().item_steerable
-    }
-
-    /// Returns dropped-item merge behavior when this entity exposes it.
-    fn as_item_merge_entity(&self) -> Option<&dyn ItemMergeEntity> {
-        self.capabilities().item_merge_entity
-    }
-
-    /// Returns experience-orb merge behavior when this entity exposes it.
-    fn as_experience_orb_merge_entity(&self) -> Option<&dyn ExperienceOrbMergeEntity> {
-        self.capabilities().experience_orb_merge_entity
-    }
-
-    /// Returns leash fence-knot behavior when this entity exposes it.
-    fn as_leash_fence_knot(&self) -> Option<&dyn LeashFenceKnot> {
-        self.capabilities().leash_fence_knot
+        try_as_dyn::<Self, dyn ItemSteerable>(self)
     }
 
     /// Returns true when vanilla `ServerEntity` should force velocity sync for fall flying.

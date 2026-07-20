@@ -727,10 +727,6 @@ impl Entity for LivingFluidTestEntity {
         self.entity_type
     }
 
-    fn as_living_entity(&self) -> Option<&dyn LivingEntity> {
-        Some(self)
-    }
-
     fn is_vehicle(&self) -> bool {
         self.vehicle
     }
@@ -2297,7 +2293,7 @@ fn generic_living_hurt_applies_source_position_knockback() {
 }
 
 #[test]
-fn as_living_entity_exposes_living_behavior_without_downcasting() {
+fn try_as_dyn_exposes_living_entity_behavior() {
     init_test_registry();
     let entity = LivingFluidTestEntity::new(0.0, 0.0, true);
     let entity_ref: &dyn Entity = &entity;
