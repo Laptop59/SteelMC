@@ -275,9 +275,7 @@ impl FireworkRocketEntity {
 
         let rocket_position = self.position();
         let search_box = self.bounding_box().inflate(EXPLOSION_RADIUS);
-        for target in
-            world.get_entities_in_aabb_matching(&search_box, |entity| entity.is_living_entity())
-        {
+        for target in world.get_entities_in_aabb_matching(&search_box, Entity::is_living_entity) {
             if attached_id == Some(target.id()) {
                 continue;
             }

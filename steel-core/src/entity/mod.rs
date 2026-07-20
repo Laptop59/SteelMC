@@ -734,6 +734,10 @@ mod callback;
 mod combat_rules;
 pub mod damage;
 pub mod entities;
+#[expect(
+    clippy::module_inception,
+    reason = "the entity module mirrors vanilla's Entity class and groups its implementation"
+)]
 mod entity;
 mod fluid_contact;
 #[expect(warnings)]
