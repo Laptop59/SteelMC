@@ -1720,6 +1720,14 @@ pub trait Entity: EntityEventSource + ErasedType + Send + Sync + 'static {
         self.base().set_rotation(rotation);
     }
 
+    /// Gets the nearest direction to the entity's yaw (horizontal rotation).
+    ///
+    /// This means that this function always returns a horizontal direction.
+    fn direction(&self) -> Direction {
+        let (yaw, _) = self.rotation();
+        Direction::from_yaw(yaw)
+    }
+
     /// Rotates this entity to face a fixed position.
     fn look_at(&self, from_anchor: EntityAnchor, target: DVec3) {
         apply_entity_look_at(self.as_entity_event_source(), from_anchor, target);
