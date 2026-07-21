@@ -72,7 +72,7 @@ impl BlockBehavior for PumpkinBlock {
 
         let clicked_direction = hit_result.direction;
         let direction = if clicked_direction.axis() == Axis::Y {
-            player.direction().opposite()
+            player.direction_yaw().opposite()
         } else {
             clicked_direction
         };
