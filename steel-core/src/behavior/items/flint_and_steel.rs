@@ -39,7 +39,7 @@ impl ItemBehavior for FlintAndSteelItem {
         }
 
         let fire_pos = click_pos.relative(context.hit_result.direction);
-        let forward_dir = context.player.direction();
+        let forward_dir = context.player.direction_yaw();
 
         if !FireBlock::can_be_placed_at(context.world, fire_pos, forward_dir) {
             return InteractionResult::Fail;
@@ -93,7 +93,7 @@ impl ItemBehavior for FireChargeItem {
         }
 
         let fire_pos = click_pos.relative(context.hit_result.direction);
-        let forward_dir = context.player.direction();
+        let forward_dir = context.player.direction_yaw();
 
         if !FireBlock::can_be_placed_at(context.world, fire_pos, forward_dir) {
             return InteractionResult::Fail;
