@@ -3,9 +3,9 @@
 use std::sync::{Arc, Weak};
 
 use glam::DVec3;
+use rand::rngs::ThreadRng;
 use smallvec::SmallVec;
 use steel_registry::block_entity_type::BlockEntityTypeRef;
-use rand::rngs::ThreadRng;
 use steel_registry::blocks::BlockRef;
 use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::{BlockStateProperties, Direction};
