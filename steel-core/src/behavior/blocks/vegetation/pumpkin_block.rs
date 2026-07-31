@@ -2,8 +2,7 @@ use crate::behavior::block::drop_from_block_interact_loot_table;
 use crate::behavior::{
     BlockBehavior, BlockPlaceContext, BlockRef, InteractionResult, InventoryAccess,
 };
-use crate::entity::entities::ItemEntity;
-use crate::entity::{Entity, next_entity_id};
+use crate::entity::Entity;
 use crate::player::Player;
 use crate::world::World;
 use crate::world::game_event::GameEventContext;
@@ -15,8 +14,7 @@ use steel_registry::blocks::block_state_ext::BlockStateExt;
 use steel_registry::blocks::properties::BlockStateProperties;
 use steel_registry::items::item::BlockHitResult;
 use steel_registry::{
-    sound_events, vanilla_blocks, vanilla_entities, vanilla_game_events, vanilla_items,
-    vanilla_loot_tables,
+    sound_events, vanilla_blocks, vanilla_game_events, vanilla_items, vanilla_loot_tables,
 };
 use steel_utils::axis::Axis;
 use steel_utils::types::{InteractionHand, UpdateFlags};
@@ -83,10 +81,7 @@ impl BlockBehavior for PumpkinBlock {
         };
 
         for drop in drops {
-            let entity_id = next_entity_id();
-            let entity = Arc::new(ItemEntity::with_item_and_velocity(
-                &vanilla_entities::ITEM,
-                entity_id,
+            world.spawn_item_with_velocity(
                 DVec3::new(
                     f64::from(pos.x()) + 0.5 + x_offset * 0.65,
                     f64::from(pos.y()) + 0.1,
@@ -98,12 +93,7 @@ impl BlockBehavior for PumpkinBlock {
                     0.05,
                     0.05 * z_offset + rng.random::<f64>() * 0.02,
                 ),
-                Arc::downgrade(world),
-            ));
-
-            if let Err(error) = world.try_add_entity(entity) {
-                log::warn!("Failed to drop item stack entity: {error}");
-            }
+            );
         }
 
         world.play_block_sound(&sound_events::BLOCK_PUMPKIN_CARVE, pos, 1.0, 1.0, None);
