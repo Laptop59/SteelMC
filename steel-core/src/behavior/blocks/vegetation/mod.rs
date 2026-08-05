@@ -1,5 +1,7 @@
 //! Block behavior implementations for crops and feature-placed vegetation.
 
+use std::sync::Arc;
+
 mod azalea_block;
 mod bamboo;
 mod bamboo_sapling;
@@ -25,6 +27,7 @@ mod coral_fan_block;
 mod coral_plant_block;
 mod coral_wall_fan_block;
 mod crop_block;
+mod dirt_path_block;
 mod double_plant_block;
 mod dry_vegetation_block;
 mod eyeblossom_block;
@@ -61,7 +64,6 @@ mod seagrass_block;
 mod segmentable_block;
 mod short_dry_grass_block;
 mod small_dripleaf_block;
-mod snow_layer_block;
 mod spore_blossom_block;
 mod sugar_cane;
 mod sweet_berry_bush;
@@ -102,6 +104,7 @@ pub use coral_fan_block::CoralFanBlock;
 pub use coral_plant_block::CoralPlantBlock;
 pub use coral_wall_fan_block::CoralWallFanBlock;
 pub use crop_block::CropBlock;
+pub use dirt_path_block::DirtPathBlock;
 pub use double_plant_block::DoublePlantBlock;
 pub use dry_vegetation_block::DryVegetationBlock;
 pub use eyeblossom_block::{EyeblossomBlock, EyeblossomType};
@@ -137,7 +140,6 @@ pub use sea_pickle_block::SeaPickleBlock;
 pub use seagrass_block::SeagrassBlock;
 pub use short_dry_grass_block::ShortDryGrassBlock;
 pub use small_dripleaf_block::SmallDripleafBlock;
-pub use snow_layer_block::SnowLayerBlock;
 pub use spore_blossom_block::SporeBlossomBlock;
 pub use sugar_cane::SugarCaneBlock;
 pub use sweet_berry_bush::SweetBerryBushBlock;
@@ -160,18 +162,38 @@ use steel_registry::blocks::shapes::{self, SupportType, is_block_local_face_stur
 use steel_registry::blocks::{BlockRef, block_state_ext::BlockStateExt};
 use steel_registry::fluid::{FluidState, FluidStateExt as _};
 use steel_registry::vanilla_block_tags::BlockTag;
-use steel_registry::vanilla_blocks;
 use steel_registry::vanilla_fluids;
-use steel_utils::{BlockPos, BlockStateId};
+use steel_registry::{vanilla_blocks, vanilla_game_events};
+use steel_utils::{BlockPos, BlockStateId, types::UpdateFlags};
 
+use crate::behavior::block::push_entities_up;
 use crate::behavior::context::BlockPlaceContext;
 use crate::behavior::{
     BLOCK_BEHAVIORS, BlockCollisionContext,
     block::{BlockBehavior, schedule_water_tick_if_waterlogged},
 };
-use crate::world::{LevelReader, ScheduledTickAccess};
+use crate::entity::Entity;
+use crate::world::game_event::GameEventContext;
+use crate::world::{LevelReader, ScheduledTickAccess, World};
 
 pub(super) type BlockTagRef<'a> = &'a steel_utils::Identifier;
+
+/// Turns farmland or a dirt path into dirt.
+pub(crate) fn turn_to_dirt(
+    state: BlockStateId,
+    world: &Arc<World>,
+    pos: BlockPos,
+    source_entity: Option<&dyn Entity>,
+) {
+    let dirt_state = push_entities_up(state, vanilla_blocks::DIRT.default_state(), world, pos);
+    if world.set_block(pos, dirt_state, UpdateFlags::UPDATE_ALL) {
+        world.game_event(
+            &vanilla_game_events::BLOCK_CHANGE,
+            pos,
+            &GameEventContext::new(source_entity, Some(dirt_state)),
+        );
+    }
+}
 
 pub(super) fn survives_on_tag(
     world: &dyn LevelReader,
@@ -441,10 +463,13 @@ pub(super) fn kelp_can_survive(world: &dyn LevelReader, pos: BlockPos) -> bool {
     {
         return false;
     }
-
-    attached_state.get_block() == &vanilla_blocks::KELP
-        || attached_state.get_block() == &vanilla_blocks::KELP_PLANT
-        || world.is_face_sturdy(attached_state, attached_pos, Direction::Up)
+    growing_plant_can_survive(
+        world,
+        pos,
+        Direction::Up,
+        &vanilla_blocks::KELP,
+        &vanilla_blocks::KELP_PLANT,
+    )
 }
 
 #[cfg(test)]
