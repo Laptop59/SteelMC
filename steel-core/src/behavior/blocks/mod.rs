@@ -63,4 +63,5 @@ pub use vegetation::{
     SaplingBlock, SculkVeinBlock, SeaPickleBlock, ShortDryGrassBlock, SmallDripleafBlock,
     SporeBlossomBlock, SulfurSpikeBlock, TallDryGrassBlock, TwistingVinesBlock,
     TwistingVinesPlantBlock, VineBlock, WeepingVinesBlock, WeepingVinesPlantBlock, WitherRoseBlock,
+    WoolCarpetBlock,
 };
