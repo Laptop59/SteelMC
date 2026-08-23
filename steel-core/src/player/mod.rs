@@ -1341,6 +1341,17 @@ impl Entity for Player {
         }
     }
 
+    fn ride_tick(&self) {
+        let pre = self.position();
+        if self.wants_to_stop_riding() && self.is_passenger() {
+            self.stop_riding();
+        } else {
+            self.default_ride_tick();
+            self.reset_fall_distance();
+        }
+        self.check_riding_statistics(self.position() - pre);
+    }
+
     fn stop_riding(&self) {
         let old_vehicle = self.vehicle();
         self.base().stop_riding();
@@ -1516,7 +1527,10 @@ impl Entity for Player {
             return false;
         }
 
-        // TODO: Award `Stats.FALL_ONE_CM` once player statistics are implemented.
+        if fall_distance >= 2.0 {
+            self.award_custom_stat_with_count(&vanilla_custom_stats::FALL_ONE_CM, (fall_distance * 100.0).round() as i32);
+        }
+
         LivingEntity::cause_living_fall_damage(self, fall_distance, damage_modifier, source)
     }
 
