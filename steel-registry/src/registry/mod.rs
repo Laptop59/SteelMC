@@ -19,6 +19,7 @@ use crate::{
     banner_pattern::BannerPatternRegistry,
     biome::BiomeRegistry,
     block_entity_type::BlockEntityTypeRegistry,
+    block_transformer::BlockTransformerRegistry,
     blocks::BlockRegistry,
     carver::ConfiguredCarverRegistry,
     cat_sound_variant::CatSoundVariantRegistry,
@@ -68,8 +69,8 @@ use crate::{
     trim_material::TrimMaterialRegistry,
     trim_pattern::TrimPatternRegistry,
     vanilla_attributes, vanilla_banner_pattern_tags, vanilla_banner_patterns, vanilla_biome_tags,
-    vanilla_biomes, vanilla_block_entity_types, vanilla_block_tags, vanilla_blocks,
-    vanilla_cat_sound_variants, vanilla_cat_variants, vanilla_chat_types,
+    vanilla_biomes, vanilla_block_entity_types, vanilla_block_tags, vanilla_block_transformers,
+    vanilla_blocks, vanilla_cat_sound_variants, vanilla_cat_variants, vanilla_chat_types,
     vanilla_chicken_sound_variants, vanilla_chicken_variants, vanilla_configured_carvers,
     vanilla_configured_features, vanilla_cow_sound_variants, vanilla_cow_variants,
     vanilla_custom_stats, vanilla_damage_type_tags, vanilla_damage_types, vanilla_dialog_tags,
@@ -257,6 +258,7 @@ pub struct Registry {
     pub villager_professions: VillagerProfessionRegistry,
     pub dimension_types: DimensionTypeRegistry,
     pub damage_types: DamageTypeRegistry,
+    pub block_transformers: BlockTransformerRegistry,
     pub banner_patterns: BannerPatternRegistry,
     pub jukebox_songs: JukeboxSongRegistry,
     pub instruments: InstrumentRegistry,
@@ -357,6 +359,7 @@ impl Registry {
         vanilla_damage_type_tags::DamageTypeTag::register_damage_type_tags(
             &mut registry.damage_types,
         );
+        vanilla_block_transformers::register_block_transformers(&mut registry.block_transformers);
         vanilla_banner_patterns::register_banner_patterns(&mut registry.banner_patterns);
         vanilla_banner_pattern_tags::BannerPatternTag::register_banner_pattern_tags(
             &mut registry.banner_patterns,
@@ -452,6 +455,7 @@ impl Registry {
         self.villager_professions.freeze();
         self.dimension_types.freeze();
         self.damage_types.freeze();
+        self.block_transformers.freeze();
         self.banner_patterns.freeze();
         self.jukebox_songs.freeze();
         self.instruments.freeze();
@@ -710,6 +714,7 @@ impl Registry {
             villager_professions: VillagerProfessionRegistry::new(),
             dimension_types: DimensionTypeRegistry::new(),
             damage_types: DamageTypeRegistry::new(),
+            block_transformers: BlockTransformerRegistry::new(),
             banner_patterns: BannerPatternRegistry::new(),
             jukebox_songs: JukeboxSongRegistry::new(),
             instruments: InstrumentRegistry::new(),
