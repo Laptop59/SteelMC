@@ -51,6 +51,7 @@ use crate::{
     map_decoration_type::MapDecorationTypeRegistry,
     menu_type::MenuTypeRegistry,
     mob_effect::MobEffectRegistry,
+    number_format_type::NumberFormatTypeRegistry,
     painting_variant::PaintingVariantRegistry,
     particle_type::ParticleTypeRegistry,
     pig_sound_variant::PigSoundVariantRegistry,
@@ -98,6 +99,7 @@ use std::{
     sync::{Once, OnceLock},
 };
 use steel_utils::Identifier;
+use crate::number_format_type::vanilla_number_format_types;
 
 pub struct RegistryLock(OnceLock<Registry>);
 
@@ -226,6 +228,7 @@ pub const STRUCTURE_PROCESSOR_LIST_REGISTRY: Identifier =
     Identifier::vanilla_static("worldgen/processor_list");
 pub const CUSTOM_STAT_REGISTRY: Identifier = Identifier::vanilla_static("custom_stat");
 pub const STAT_TYPE_REGISTRY: Identifier = Identifier::vanilla_static("stat_type");
+pub const NUMBER_FORMAT_TYPE_REGISTRY: Identifier = Identifier::vanilla_static("number_format_type");
 
 pub struct Registry {
     pub attributes: AttributeRegistry,
@@ -285,6 +288,7 @@ pub struct Registry {
     pub structure_processors: StructureProcessorListRegistry,
     pub custom_stats: CustomStatRegistry,
     pub stat_types: StatTypeRegistry,
+    pub number_format_types: NumberFormatTypeRegistry
 }
 
 impl Debug for Registry {
@@ -416,6 +420,7 @@ impl Registry {
 
         vanilla_custom_stats::register_custom_stats(&mut registry.custom_stats);
         vanilla_stat_types::register_vanilla_stat_types(&mut registry.stat_types);
+        vanilla_number_format_types::register_number_format_types(&mut registry.number_format_types);
 
         registry
     }
@@ -480,6 +485,7 @@ impl Registry {
         self.structure_processors.freeze();
         self.custom_stats.freeze();
         self.stat_types.freeze();
+        self.number_format_types.freeze();
     }
 
     fn validate_references(&self) {
@@ -738,6 +744,7 @@ impl Registry {
             structure_processors: StructureProcessorListRegistry::new(),
             custom_stats: CustomStatRegistry::new(),
             stat_types: StatTypeRegistry::new(),
+            number_format_types: NumberFormatTypeRegistry::new()
         }
     }
 }
