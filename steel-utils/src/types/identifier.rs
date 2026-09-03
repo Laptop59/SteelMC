@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize, de::Error as _};
 use simdnbt::owned::NbtTag;
 use std::cmp::Ordering;
+use std::error::Error;
 use std::{
     borrow::Cow,
     fmt::{self, Debug, Display, Formatter},
@@ -106,6 +107,31 @@ impl Identifier {
     pub fn validate(namespace: &str, path: &str) -> bool {
         Self::validate_namespace(namespace) && Self::validate_path(path)
     }
+
+    /// Parses an identifier with a given separator.
+    pub fn parse_by_separator(
+        identifier: &str,
+        separator: char,
+    ) -> Result<Self, IdentifierParseError> {
+        let (namespace, path) = match identifier.split_once(separator) {
+            Some(("", path)) => (Self::VANILLA_NAMESPACE, path),
+            Some((namespace, path)) => (namespace, path),
+            None => (Self::VANILLA_NAMESPACE, identifier),
+        };
+
+        if !Identifier::validate_namespace(namespace) {
+            return Err(IdentifierParseError::InvalidNamespace);
+        }
+
+        if !Identifier::validate_path(path) {
+            return Err(IdentifierParseError::InvalidPath);
+        }
+
+        Ok(Identifier {
+            namespace: Cow::Owned(namespace.to_owned()),
+            path: Cow::Owned(path.to_owned()),
+        })
+    }
 }
 
 impl Display for Identifier {
@@ -129,29 +155,13 @@ impl Ord for Identifier {
 }
 
 impl FromStr for Identifier {
-    type Err = &'static str;
+    type Err = IdentifierParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (namespace, path) = match s.split_once(':') {
-            Some(("", path)) => (Self::VANILLA_NAMESPACE, path),
-            Some((namespace, path)) => (namespace, path),
-            None => (Self::VANILLA_NAMESPACE, s),
-        };
-
-        if !Identifier::validate_namespace(namespace) {
-            return Err("Invalid namespace");
-        }
-
-        if !Identifier::validate_path(path) {
-            return Err("Invalid path");
-        }
-
-        Ok(Identifier {
-            namespace: Cow::Owned(namespace.to_owned()),
-            path: Cow::Owned(path.to_owned()),
-        })
+        Self::parse_by_separator(s, ':')
     }
 }
+
 impl Serialize for Identifier {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -200,7 +210,9 @@ unsafe impl<'de, C: Config> SchemaRead<'de, C> for Identifier {
         // SAFETY: String::read succeeded, so s is initialized
         let s = unsafe { s.assume_init() };
 
-        dst.write(Identifier::from_str(&s).map_err(wincode::ReadError::Custom)?);
+        dst.write(
+            Identifier::from_str(&s).map_err(|error| wincode::ReadError::Custom(error.as_str()))?,
+        );
         Ok(())
     }
 }
@@ -224,3 +236,28 @@ impl simdnbt::FromNbtTag for Identifier {
         s.parse().ok()
     }
 }
+
+/// Represents an error that occurred while parsing an [`Identifier`].
+#[derive(Copy, Clone, Debug)]
+pub enum IdentifierParseError {
+    InvalidNamespace,
+    InvalidPath,
+}
+
+impl IdentifierParseError {
+    /// Returns the static message of this error.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            IdentifierParseError::InvalidNamespace => "Invalid namespace",
+            IdentifierParseError::InvalidPath => "Invalid path",
+        }
+    }
+}
+
+impl Display for IdentifierParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl Error for IdentifierParseError {}

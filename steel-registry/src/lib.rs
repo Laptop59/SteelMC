@@ -62,6 +62,7 @@ pub mod map_decoration_type;
 pub mod menu_type;
 pub mod mob_effect;
 pub use mob_effect::instance as mob_effect_instance;
+pub mod number_format_type;
 pub mod painting_variant;
 pub mod particle_type;
 pub mod pig_sound_variant;
