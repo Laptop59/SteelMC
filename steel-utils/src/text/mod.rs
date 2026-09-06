@@ -38,6 +38,15 @@ impl TextResolutor for DisplayResolutor {
     }
 }
 
+impl ReadFrom for Format {
+    fn read(data: &mut Cursor<&[u8]>) -> io::Result<Self> {
+        let nbt_tag =
+            read_tag(data).map_err(|e| io::Error::other(format!("Failed to read NBT: {e:?}")))?;
+
+        todo!()
+    }
+}
+
 impl ReadFrom for TextComponent {
     fn read(data: &mut Cursor<&[u8]>) -> io::Result<Self> {
         // ComponentSerialization.STREAM_CODEC writes one unnamed NBT tag.

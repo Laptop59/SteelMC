@@ -29,7 +29,7 @@ macro_rules! define_team_vanilla_criteria {
     ) => {
         $(
             $(#[$attr])*
-            pub static $static_name: TeamObjectiveCriteria = TeamObjectiveCriteria::new($prefix);
+            pub static $static_name: StaticTeamObjectiveCriteria = StaticTeamObjectiveCriteria::new($prefix);
         )*
 
         fn register_team_criteria(criteria: &mut ObjectiveCriteria) {
@@ -46,7 +46,7 @@ macro_rules! vanilla_criterion {
         $static_name: ident ( $name: literal )
     ) => {
         $(#[$attr])*
-        pub static $static_name: ObjectiveCriterion = ObjectiveCriterion::custom($name);
+        pub static $static_name: StaticObjectiveCriterion = StaticObjectiveCriterion::custom($name);
     };
 
     (
@@ -54,7 +54,7 @@ macro_rules! vanilla_criterion {
         $static_name: ident ( $name: literal ) => $read_only: literal, $render_type: expr
     ) => {
         $(#[$attr])*
-        pub static $static_name: ObjectiveCriterion = ObjectiveCriterion::custom_with_properties($name, $read_only, $render_type);
+        pub static $static_name: StaticObjectiveCriterion = StaticObjectiveCriterion::custom_with_properties($name, $read_only, $render_type);
     };
 }
 

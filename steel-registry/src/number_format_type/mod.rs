@@ -11,9 +11,7 @@ pub struct NumberFormatType {
 impl NumberFormatType {
     /// Creates a new number format type.
     pub const fn new(key: Identifier) -> Self {
-        Self {
-            key
-        }
+        Self { key }
     }
 }
 
