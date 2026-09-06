@@ -10,6 +10,7 @@ use std::{
 
 use simdnbt::owned::{NbtCompound, NbtTag};
 use text_components::TextComponent;
+use text_components::format::Format;
 use uuid::Uuid;
 
 use crate::{
@@ -132,6 +133,12 @@ impl<T: WriteTo> WriteTo for Vec<T> {
 impl WriteTo for BlockPos {
     fn write(&self, writer: &mut impl Write) -> Result<()> {
         PackedBlockPos::from(*self).write(writer)
+    }
+}
+
+impl WriteTo for Format {
+    fn write(&self, writer: &mut impl Write) -> Result<()> {
+        todo!()
     }
 }
 
