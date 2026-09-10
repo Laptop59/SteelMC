@@ -4,11 +4,7 @@ use steel_registry::number_format_type::{NumberFormatTypeRef, vanilla_number_for
 use steel_utils::serial::{ReadFrom, WriteTo};
 use text_components::TextComponent;
 use text_components::format::Format;
-
-/// A trait that number formats implement.
-pub trait NumberFormat<'de>: WriteTo + ReadFrom + Serialize + Deserialize<'de> {
-    fn format_type(&self) -> NumberFormatTypeRef;
-}
+use crate::scoreboard::style::Style;
 
 /// Does not display anything, leaving it as a blank.
 #[derive(Serialize, Deserialize)]
@@ -16,7 +12,7 @@ pub struct BlankFormat;
 
 /// The number is displayed with a given style.
 #[derive(Serialize, Deserialize)]
-pub struct StyledFormat(pub Format);
+pub struct StyledFormat(pub Style);
 
 /// Always displays a fixed text component instead of the number provided.
 #[derive(Serialize, Deserialize)]

@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use text_components::format::Format;
 use text_components::TextComponent;
+use crate::scoreboard::style::Style;
 use crate::scoreboard::team_color::TeamColor;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,15 +18,15 @@ pub struct Team {
     pub death_message_visibility: TeamVisibility,
     pub color: Option<TeamColor>,
     pub collision_rule: TeamCollisionRule,
-    pub display_name_style: Format
+    pub display_name_style: Style
 }
 
 impl Team {
-    pub fn new(name: &str) -> Self {
+    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
         let name_text_component = TextComponent::plain(name);
         Self {
             players: FxHashSet::default(),
-            display_name: name_text_component.clone(),
+            display_name: name_text_component,
             player_prefix: TextComponent::new(),
             player_suffix: TextComponent::new(),
             allow_friendly_fire: true,
@@ -33,7 +35,7 @@ impl Team {
             death_message_visibility: TeamVisibility::Always,
             color: None,
             collision_rule: TeamCollisionRule::Always,
-            display_name_style: todo!()
+            display_name_style: Style::new()
         }
     }
 }

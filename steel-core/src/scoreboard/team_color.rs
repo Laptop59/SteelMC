@@ -1,8 +1,10 @@
 use std::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 use text_components::format::Color;
 
 /// Represents a color that a team can use.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TeamColor {
     Black = 0,
     DarkBlue = 1,
