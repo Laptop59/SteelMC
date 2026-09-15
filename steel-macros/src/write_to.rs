@@ -373,7 +373,7 @@ fn write_to_enum(s: syn::DataEnum, name: Ident, attrs: Vec<syn::Attribute>) -> T
         }
         s => panic!(
             "Unknown write strategy for enum: `{s}`. \
-            Expected one of: VarInt, Prefixed, or a primitive type ({ALLOWED_TYPES:?})"
+            Expected one of: VarInt, Prefixed, Dispatched, or a primitive type ({ALLOWED_TYPES:?})"
         ),
     };
 
@@ -403,7 +403,7 @@ fn dispatch_enum_variant_match_branch(
                 let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
 
                 if let Some(strat) = strategy {
-                    generate_write_code(&strat, quote! { #field_name }, bound.as_ref())
+                    generate_write_code(&strat, quote! { (*#field_name) }, bound.as_ref())
                 } else {
                     quote! {
                         #field_name.write(writer)?;
@@ -431,7 +431,7 @@ fn dispatch_enum_variant_match_branch(
                 let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
 
                 if let Some(strat) = strategy {
-                    generate_write_code(&strat, quote! { #ident }, bound.as_ref())
+                    generate_write_code(&strat, quote! { (*#ident) }, bound.as_ref())
                 } else {
                     quote! {
                         #ident.write(writer)?;
