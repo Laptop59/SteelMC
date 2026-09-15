@@ -1,11 +1,14 @@
 //! This module contains the types for various boss bar properties.
 
+use crate::codec::VarInt;
+use crate::serial::WriteTo;
 use bitflags::bitflags;
 use serde::de::{Error, MapAccess, Visitor};
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt;
 use std::fmt::Formatter;
+use std::io::Write;
+use std::{fmt, io};
 use text_components::format::Color;
 
 /// Represents the color of a boss bar.
@@ -75,6 +78,12 @@ impl BossBarColor {
     }
 }
 
+impl WriteTo for BossBarColor {
+    fn write(&self, writer: &mut impl Write) -> io::Result<()> {
+        VarInt(*self as i32).write(writer)
+    }
+}
+
 /// Represents the overlay of a boss bar.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -119,6 +128,12 @@ impl BossBarOverlay {
             Self::Notched12 => "notched_12",
             Self::Notched20 => "notched_20",
         }
+    }
+}
+
+impl WriteTo for BossBarOverlay {
+    fn write(&self, writer: &mut impl Write) -> io::Result<()> {
+        VarInt(*self as i32).write(writer)
     }
 }
 
@@ -182,5 +197,11 @@ impl<'de> Visitor<'de> for BossBarFlagsVisitor {
             }
         }
         Ok(flags)
+    }
+}
+
+impl WriteTo for BossBarFlags {
+    fn write(&self, writer: &mut impl Write) -> io::Result<()> {
+        self.bits().write(writer)
     }
 }

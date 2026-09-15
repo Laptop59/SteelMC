@@ -7,6 +7,8 @@
 pub mod axis;
 /// Vanilla `BlockUtil` helpers.
 pub mod block_util;
+/// Boss bar utility types.
+pub mod bossbar;
 /// Climate system for biome selection.
 pub mod climate;
 pub mod codec;
