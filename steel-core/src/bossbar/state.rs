@@ -1,28 +1,28 @@
 //! This module contains the base state of a boss bar.
 //! Boss bar implementations can build on top of this state.
 
-use crate::bossbar::properties::{BossBarColor, BossBarFlags, BossBarOverlay};
 use serde::{Deserialize, Serialize};
+use steel_utils::bossbar::{BossBarColor, BossBarFlags, BossBarOverlay};
 use text_components::TextComponent;
 use uuid::Uuid;
 
-/// Represents a unique instance of a boss bar.
-/// This stores its progress, color, overlay, name, and flags.
+/// Represents the state of a boss bar, without considering its viewers.
+/// This stores its name, progress, color, overlay, and flags.
 ///
 /// A boss bar's ID is not persistent: it is not serialized,
-/// and upon deserialization, it is set to a new random UUID.
+/// and upon deserialization, it is assigned a new random UUID.
 ///
-/// Other boss bars can build their implementation with this state.
+/// Boss bar implementations can build on this state.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BossBarState {
-    id: Uuid,
-    name: TextComponent,
-    progress: f32,
-    color: BossBarColor,
-    overlay: BossBarOverlay,
+    pub(crate) id: Uuid,
+    pub(crate) name: TextComponent,
+    pub(crate) progress: f32,
+    pub(crate) color: BossBarColor,
+    pub(crate) overlay: BossBarOverlay,
 
     #[serde(flatten)]
-    flags: BossBarFlags,
+    pub(crate) flags: BossBarFlags,
 }
 
 impl BossBarState {
