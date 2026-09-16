@@ -398,23 +398,25 @@ fn dispatch_enum_variant_match_branch(
         i32::try_from(ordinal).expect("enum variant ordinal is too large to fit in an i32");
     match variant.fields {
         Fields::Named(fields) => {
-            let writers = fields.named.iter().map(|f| {
-                let field_name = f.ident.as_ref().expect("should have a named field");
+            let writers = fields.named.iter().enumerate().map(|(i, f)| {
                 let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
+                let local_var_name = format_ident!("value{i}");
 
                 if let Some(strat) = strategy {
-                    generate_write_code(&strat, quote! { (*#field_name) }, bound.as_ref())
+                    generate_write_code(&strat, quote! { (*#local_var_name) }, bound.as_ref())
                 } else {
                     quote! {
-                        #field_name.write(writer)?;
+                        #local_var_name.write(writer)?;
                     }
                 }
             });
 
-            let field_names = fields.named.iter().map(|f| {
+            let field_names = fields.named.iter().enumerate().map(|(i, f)| {
                 let field_name = f.ident.as_ref().expect("should have a named field");
+                let local_var_name = format_ident!("value{i}");
+                // Prevent name collisions
                 quote! {
-                    #field_name
+                    #field_name: #local_var_name
                 }
             });
 
