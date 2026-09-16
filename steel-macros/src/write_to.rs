@@ -403,6 +403,11 @@ fn dispatch_enum_variant_match_branch(
     let variant_ident = variant.ident;
     let ordinal =
         i32::try_from(ordinal).expect("enum variant ordinal is too large to fit in an i32");
+
+    let ordinal_writer = quote! {
+        steel_utils::codec::VarInt(#ordinal).write(writer)?;
+    };
+
     match variant.fields {
         Fields::Named(fields) => {
             let writers = dispatch_enum_variant_field_writers(&fields.named);
@@ -417,7 +422,7 @@ fn dispatch_enum_variant_match_branch(
 
             quote! {
                 Self::#variant_ident { #(#field_names),* } => {
-                    steel_utils::codec::VarInt(#ordinal).write(writer)?;
+                    #ordinal_writer
                     #(#writers)*
                 }
             }
@@ -428,14 +433,14 @@ fn dispatch_enum_variant_match_branch(
 
             quote! {
                 Self::#variant_ident( #(#values),* ) => {
-                    steel_utils::codec::VarInt(#ordinal).write(writer)?;
+                    #ordinal_writer
                     #(#writers)*
                 }
             }
         }
         Fields::Unit => {
             quote! {
-                Self::#variant_ident => steel_utils::codec::VarInt(#ordinal).write(writer)?
+                Self::#variant_ident => { #ordinal_writer }
             }
         }
     }
