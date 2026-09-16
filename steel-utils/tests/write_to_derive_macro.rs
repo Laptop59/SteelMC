@@ -7,20 +7,20 @@ use steel_utils::serial::WriteTo;
 fn enum_dispatch() {
     #[derive(WriteTo)]
     #[write(as = Dispatched)]
-    enum X {
-        A(i32, #[write(as = VarLong)] i64, bool),
+    enum X<'a, 'b> {
+        A(&'a i32, #[write(as = VarLong)] i64, &'b bool),
         B {
             #[write(as = VarInt)]
             // To test variable name collisions with the generated implementation
             writer: i32,
-            y: i16,
+            y: &'b i16,
         },
         C,
     }
 
     let mut buffer = Vec::new();
 
-    let a = X::A(3, 4, true);
+    let a = X::A(&3, 4, &true);
     a.write(&mut buffer)
         .expect("should have written without any errors");
     assert_eq!(buffer, [0x00, 0x00, 0x00, 0x00, 0x03, 0x04, 0x01]);
@@ -28,7 +28,7 @@ fn enum_dispatch() {
 
     let b = X::B {
         writer: 127,
-        y: 0x1234,
+        y: &0x1234,
     };
     b.write(&mut buffer)
         .expect("should have written without any errors");

@@ -16,7 +16,7 @@ pub(super) fn derive(input: TokenStream) -> TokenStream {
 
     match input.data {
         Data::Struct(value) => write_to_struct(value, name, &input.generics, &input.attrs),
-        Data::Enum(value) => write_to_enum(value, name, input.attrs),
+        Data::Enum(value) => write_to_enum(value, name, &input.generics, input.attrs),
         Data::Union(_) => panic!("Write can only be derived for structs and enums"),
     }
 }
@@ -292,7 +292,14 @@ fn write_to_struct(
     }
 }
 
-fn write_to_enum(s: syn::DataEnum, name: Ident, attrs: Vec<syn::Attribute>) -> TokenStream {
+fn write_to_enum(
+    s: syn::DataEnum,
+    name: Ident,
+    generics: &syn::Generics,
+    attrs: Vec<syn::Attribute>,
+) -> TokenStream {
+    let (impl_generics, ty_generics, _) = generics.split_for_impl();
+
     let mut strategy: Option<Strategy> = None;
     let mut bound: Option<syn::LitInt> = None;
 
@@ -379,7 +386,7 @@ fn write_to_enum(s: syn::DataEnum, name: Ident, attrs: Vec<syn::Attribute>) -> T
 
     TokenStream::from(quote! {
         #[automatically_derived]
-        impl steel_utils::serial::WriteTo for #name {
+        impl #impl_generics steel_utils::serial::WriteTo for #name #ty_generics {
             fn write(&self, writer: &mut impl std::io::Write) -> std::io::Result<()> {
                 #writer
 
