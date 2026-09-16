@@ -1,6 +1,7 @@
 //! Module for boss bars and their manager.
 
 pub mod bar;
+pub mod custom;
 pub mod manager;
 pub mod packets;
 pub mod state;
