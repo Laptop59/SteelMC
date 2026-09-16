@@ -205,3 +205,9 @@ impl WriteTo for BossBarFlags {
         self.bits().write(writer)
     }
 }
+
+impl Default for BossBarFlags {
+    fn default() -> Self {
+        Self::empty()
+    }
+}

@@ -1,4 +1,5 @@
 //! This module contains the base state of a boss bar.
+//! This state does not track its viewers.
 //! Boss bar implementations can build on top of this state.
 
 use serde::{Deserialize, Serialize};
