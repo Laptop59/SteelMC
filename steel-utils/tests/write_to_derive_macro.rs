@@ -10,9 +10,10 @@ fn enum_dispatch() {
     enum X<'a, 'b> {
         A(&'a i32, #[write(as = VarLong)] i64, &'b bool),
         B {
-            #[write(as = VarInt)]
             // To test variable name collisions with the generated implementation
+            #[write(as = VarInt)]
             writer: i32,
+
             y: &'b i16,
         },
         C,
