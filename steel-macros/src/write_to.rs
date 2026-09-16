@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
-use syn::{Data, DeriveInput, Fields, Ident, Meta, Variant, parse_macro_input};
+use syn::{Data, DeriveInput, Field, Fields, Ident, Meta, Variant, parse_macro_input};
 
 use crate::strategy::{ALLOWED_TYPES, Strategy};
 
@@ -405,19 +405,7 @@ fn dispatch_enum_variant_match_branch(
         i32::try_from(ordinal).expect("enum variant ordinal is too large to fit in an i32");
     match variant.fields {
         Fields::Named(fields) => {
-            let writers = fields.named.iter().enumerate().map(|(i, f)| {
-                let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
-                let local_var_name = format_ident!("value{i}");
-
-                if let Some(strat) = strategy {
-                    generate_write_code(&strat, quote! { (*#local_var_name) }, bound.as_ref())
-                } else {
-                    quote! {
-                        #local_var_name.write(writer)?;
-                    }
-                }
-            });
-
+            let writers = dispatch_enum_variant_field_writers(&fields.named);
             let field_names = fields.named.iter().enumerate().map(|(i, f)| {
                 let field_name = f.ident.as_ref().expect("should have a named field");
                 let local_var_name = format_ident!("value{i}");
@@ -435,19 +423,7 @@ fn dispatch_enum_variant_match_branch(
             }
         }
         Fields::Unnamed(fields) => {
-            let writers = fields.unnamed.iter().enumerate().map(|(i, f)| {
-                let ident = format_ident!("value{i}");
-                let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
-
-                if let Some(strat) = strategy {
-                    generate_write_code(&strat, quote! { (*#ident) }, bound.as_ref())
-                } else {
-                    quote! {
-                        #ident.write(writer)?;
-                    }
-                }
-            });
-
+            let writers = dispatch_enum_variant_field_writers(&fields.unnamed);
             let values = (0..fields.unnamed.len()).map(|i| format_ident!("value{i}"));
 
             quote! {
@@ -463,4 +439,21 @@ fn dispatch_enum_variant_match_branch(
             }
         }
     }
+}
+
+fn dispatch_enum_variant_field_writers<'a>(
+    iter: impl IntoIterator<Item = &'a Field>,
+) -> impl Iterator<Item = proc_macro2::TokenStream> {
+    iter.into_iter().enumerate().map(|(i, f)| {
+        let FieldWriteAttributes { strategy, bound } = parse_write_attributes(f);
+        let ident = format_ident!("value{i}");
+
+        if let Some(strat) = strategy {
+            generate_write_code(&strat, quote! { (*#ident) }, bound.as_ref())
+        } else {
+            quote! {
+                #ident.write(writer)?;
+            }
+        }
+    })
 }
