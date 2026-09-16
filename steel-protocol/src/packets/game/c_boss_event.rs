@@ -1,6 +1,6 @@
 use steel_macros::{ClientPacket, WriteTo};
 use steel_registry::packets::play::C_BOSS_EVENT;
-use steel_utils::bossbar::{BossBarColor, BossBarFlags, BossBarOverlay};
+use steel_utils::boss_bar_properties::{BossBarColor, BossBarFlags, BossBarOverlay};
 use text_components::TextComponent;
 use uuid::Uuid;
 

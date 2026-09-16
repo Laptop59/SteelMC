@@ -12,7 +12,7 @@ pub mod behavior;
 pub mod block_entity;
 mod block_state_provider;
 pub mod bootstrap;
-pub mod bossbar;
+pub mod boss_bar;
 pub mod chunk;
 pub mod chunk_saver;
 pub mod command;

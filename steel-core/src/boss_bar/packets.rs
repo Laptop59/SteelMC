@@ -1,12 +1,12 @@
 //! Provides a way to send boss bar packets to players from a boss bar's state.
 
-use crate::bossbar::state::BossBarState;
+use crate::boss_bar::state::BossBarState;
 use steel_protocol::packets::game::{BossEventOperation, CBossEvent};
 
 impl BossBarState {
     /// Creates a packet from the boss bar and operation type.
     #[must_use]
-    pub fn packet(&self, operation: BossBarOperation) -> CBossEvent {
+    pub fn create_packet(&self, operation: BossBarOperation) -> CBossEvent {
         let operation = match operation {
             BossBarOperation::Add => BossEventOperation::Add {
                 name: self.name.clone(),
