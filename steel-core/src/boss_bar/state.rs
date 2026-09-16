@@ -3,7 +3,7 @@
 //! Boss bar implementations can build on top of this state.
 
 use serde::{Deserialize, Serialize};
-use steel_utils::bossbar::{BossBarColor, BossBarFlags, BossBarOverlay};
+use steel_utils::boss_bar_properties::{BossBarColor, BossBarFlags, BossBarOverlay};
 use text_components::TextComponent;
 use uuid::Uuid;
 
