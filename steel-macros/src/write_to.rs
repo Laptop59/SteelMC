@@ -413,8 +413,8 @@ fn dispatch_enum_variant_match_branch(
             let writers = dispatch_enum_variant_field_writers(&fields.named);
             let field_names = fields.named.iter().enumerate().map(|(i, f)| {
                 let field_name = f.ident.as_ref().expect("should have a named field");
-                let local_var_name = format_ident!("value{i}");
                 // Prevent name collisions
+                let local_var_name = format_ident!("value{i}");
                 quote! {
                     #field_name: #local_var_name
                 }
