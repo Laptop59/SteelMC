@@ -17,22 +17,27 @@ use crate::{
 use glam::DVec3;
 use steel_protocol::packets::game::{
     CContainerClose, COpenScreen, CSetPlayerInventory, ClickType, SContainerButtonClick,
-    SContainerClick, SContainerClose, SContainerSlotStateChanged, SRenameItem, SSetCarriedItem,
-    SSetCreativeModeSlot,
+    SContainerClick, SContainerClose, SContainerSlotStateChanged, SRenameItem, SSetBeacon,
+    SSetCarriedItem, SSetCreativeModeSlot,
 };
+use steel_registry::data_components::vanilla_components::SwingAnimation;
 use steel_registry::item_stack::ItemStack;
+use steel_registry::mob_effect::MobEffectRef;
 use steel_registry::stat::vanilla_stat_types;
 use steel_registry::vanilla_custom_stats;
+use steel_registry::{REGISTRY, RegistryExt};
 use steel_utils::{
     Downcast as _,
     locks::Shared,
+    translations,
     types::{GameType, InteractionHand},
 };
 use text_components::TextComponent;
 
 use super::{
     DeferredMenuAction, MenuItemDisposition, MenuOpenContext, MenuRemovalStatus, OpenMenuDispatch,
-    OpenMenuUnavailable, PendingMenuOpen, PlayerInventory, PreparedMenu, TerminalMenuRemoval,
+    OpenMenuUnavailable, PendingMenuOpen, PlayerInventory, Prediction, PreparedMenu,
+    TerminalMenuRemoval,
 };
 
 impl Player {
@@ -184,6 +189,52 @@ impl Player {
 
             entity.player_touch(&player_arc);
         }
+    }
+
+    /// Resolves an optional beacon effect ID, rejecting IDs vanilla's packet codec would reject.
+    pub(super) fn resolve_beacon_effect(id: Option<i32>) -> Result<Option<MobEffectRef>, ()> {
+        id.map(|id| {
+            let id = usize::try_from(id).map_err(|_| ())?;
+            REGISTRY.mob_effects.by_id(id).ok_or(())
+        })
+        .transpose()
+    }
+
+    /// Handles a beacon effect selection from the set-beacon packet.
+    pub fn handle_set_beacon_packet(&self, packet: SSetBeacon) {
+        let (Ok(primary), Ok(secondary)) = (
+            Self::resolve_beacon_effect(packet.primary),
+            Self::resolve_beacon_effect(packet.secondary),
+        ) else {
+            log::warn!(
+                "Player {} sent an unknown beacon effect id",
+                self.gameprofile.name
+            );
+            self.disconnect(translations::MULTIPLAYER_DISCONNECT_GENERIC.msg());
+            return;
+        };
+
+        let Ok(mut menu) = self.take_open_menu_for_callback(None) else {
+            return;
+        };
+        if !menu.still_valid(self) {
+            log::debug!(
+                "Player {} interacted with invalid menu",
+                self.gameprofile.name
+            );
+            self.finish_open_menu_callback(menu);
+            return;
+        }
+        if !menu.update_effects(primary, secondary, &self.connection) {
+            log::warn!(
+                "Player {} tried to set invalid beacon effects",
+                self.gameprofile.name
+            );
+            self.finish_open_menu_callback(menu);
+            self.disconnect(translations::MULTIPLAYER_DISCONNECT_GENERIC.msg());
+            return;
+        }
+        self.finish_open_menu_callback(menu);
     }
 
     /// Handles a container button click packet (e.g., enchanting table buttons).
@@ -426,7 +477,7 @@ impl Player {
                     return;
                 }
             }
-            let _ = self.drop_item(item_stack, false, true);
+            let _ = self.drop_item(item_stack, true, Prediction::Predicted);
         }
     }
 
@@ -932,27 +983,49 @@ impl Player {
         let removed = {
             let mut inventory = self.inventory.lock();
             let selected_count = inventory.get_selected_item().count();
-            if selected_count == 0 {
-                return;
-            }
             inventory.split_item_in_hand(
                 InteractionHand::MainHand,
                 if all { selected_count } else { 1 },
             )
         };
 
-        let _ = self.drop_item(removed, false, true);
+        let _ = self.drop_item(removed, true, Prediction::Predicted);
+        self.reset_attack_strength_ticker();
     }
 
-    /// Drops an item into the world.
+    /// Swings the main hand and throws `item` in the facing direction.
     ///
-    /// Based on Java's `LivingEntity.drop(ItemStack, boolean randomly, boolean thrownFromHand)`.
+    /// Based on Java's `LivingEntity.drop(ItemStack, boolean thrownFromHand, Prediction)`.
+    /// `prediction` decides whether the swing is also sent to this player.
+    #[must_use]
+    pub fn drop_item(
+        &self,
+        item: ItemStack,
+        thrown_from_hand: bool,
+        prediction: Prediction,
+    ) -> Option<Arc<ItemEntity>> {
+        if item.is_empty() {
+            return None;
+        }
+
+        self.swing(
+            InteractionHand::MainHand,
+            SwingAnimation::DEFAULT,
+            prediction == Prediction::ServerOnly,
+        );
+        self.spawn_dropped_item(item, false, thrown_from_hand)
+    }
+
+    /// Spawns `item` as a dropped entity without swinging.
+    ///
+    /// Based on Java's `LivingEntity.createItemStackToDrop`, used directly by
+    /// death drops and `/give` overflow.
     ///
     /// - `throw_randomly`: If true, the item is thrown in a random direction.
     ///   If false, it's thrown in the direction the player is facing.
     /// - `thrown_from_hand`: If true, sets the thrower and uses a longer pickup delay.
     #[must_use]
-    pub fn drop_item(
+    pub fn spawn_dropped_item(
         &self,
         item: ItemStack,
         throw_randomly: bool,
@@ -1032,13 +1105,13 @@ impl Player {
     /// drops the items.
     #[must_use]
     pub fn returns_menu_items_to_inventory(&self) -> bool {
-        if let Some(disposition) = self
+        let terminal_disposition = self
             .open_menu
             .lock()
             .terminal_removal
             .as_ref()
-            .map(|terminal_removal| terminal_removal.disposition)
-        {
+            .map(|terminal_removal| terminal_removal.disposition);
+        if let Some(disposition) = terminal_disposition {
             return disposition == MenuItemDisposition::ReturnToInventory;
         }
 
@@ -1058,14 +1131,14 @@ impl Player {
     /// Tries to add an item to the player's inventory, dropping it if it doesn't fit.
     ///
     /// Based on Java's `Inventory.placeItemBackInInventory`.
-    pub fn add_item_or_drop(&self, mut item: ItemStack) {
+    pub fn add_item_or_drop(&self, mut item: ItemStack, prediction: Prediction) {
         if item.is_empty() {
             return;
         }
 
         let added = self.inventory.lock().add(&mut item);
         if !added || !item.is_empty() {
-            let _ = self.drop_item(item, false, false);
+            let _ = self.drop_item(item, false, prediction);
         }
     }
 
@@ -1074,7 +1147,12 @@ impl Player {
     ///
     /// Use this variant when you already hold a `ContainerLockGuard` that includes
     /// the player's inventory to avoid deadlocks.
-    pub fn add_item_or_drop_with_guard(&self, guard: &mut ContainerLockGuard, mut item: ItemStack) {
+    pub fn add_item_or_drop_with_guard(
+        &self,
+        guard: &mut ContainerLockGuard,
+        mut item: ItemStack,
+        prediction: Prediction,
+    ) {
         if item.is_empty() {
             return;
         }
@@ -1087,7 +1165,7 @@ impl Player {
             true
         };
         if should_drop {
-            let _ = guard.run_unlocked(|| self.drop_item(item, false, false));
+            let _ = guard.run_unlocked(|| self.drop_item(item, false, prediction));
         }
     }
 }

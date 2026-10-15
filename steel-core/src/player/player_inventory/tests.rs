@@ -27,8 +27,8 @@ use steel_protocol::{
     packets::game::{ClickType, HashedStack, SContainerClick, SSetCreativeModeSlot},
 };
 use steel_registry::{
-    init_vanilla_registry, item_stack::ItemStack, vanilla_entities, vanilla_items,
-    vanilla_menu_types,
+    RegistryEntry, init_vanilla_registry, item_stack::ItemStack, vanilla_entities, vanilla_items,
+    vanilla_menu_types, vanilla_mob_effects,
 };
 use steel_utils::{
     ChunkPos, Downcast as _, DowncastType, DowncastTypeKey, Identifier, WorldAabb,
@@ -1169,9 +1169,10 @@ fn empty_test_menu(player: &Player, container_id: u8, kind: impl MenuKind + 'sta
 #[test]
 fn disconnected_menu_removal_drops_transient_items() {
     init_vanilla_registry();
-    let world = fresh_test_world("disconnected_menu_close");
-    insert_ready_full_chunk(&world, ChunkPos::new(0, 0));
-    let player = test_player(Arc::clone(&world));
+    let world_fixture = fresh_test_world("disconnected_menu_close");
+    let world = &world_fixture.world;
+    insert_ready_full_chunk(world, ChunkPos::new(0, 0));
+    let player = test_player(Arc::clone(world));
     let transient = SimpleContainer::new(9).into_shared();
     transient
         .lock()
@@ -1186,7 +1187,7 @@ fn disconnected_menu_removal_drops_transient_items() {
         state: Arc::clone(&probe_state),
         container: Arc::clone(&transient),
     })));
-    let observer = TestPlayerBuilder::new(Arc::clone(&world), "Observer", next_entity_id())
+    let observer = TestPlayerBuilder::new(Arc::clone(world), "Observer", next_entity_id())
         .connection(observer_connection)
         .build();
     assert!(world.add_player(Arc::clone(&observer), ResetReason::InitialJoin));
@@ -1447,9 +1448,10 @@ fn malformed_non_quickcraft_click_resets_active_drag() {
 #[test]
 fn closing_menu_while_dead_does_not_return_items_to_inventory() {
     init_vanilla_registry();
-    let world = fresh_test_world("dead_menu_close");
-    insert_ready_full_chunk(&world, ChunkPos::new(0, 0));
-    let player = test_player(Arc::clone(&world));
+    let world_fixture = fresh_test_world("dead_menu_close");
+    let world = &world_fixture.world;
+    insert_ready_full_chunk(world, ChunkPos::new(0, 0));
+    let player = test_player(Arc::clone(world));
     let transient = SimpleContainer::new(9).into_shared();
     transient
         .lock()
@@ -1696,9 +1698,10 @@ fn terminal_menu_removal_skips_queued_factory_and_drains_base_menu() {
 #[test]
 fn pending_terminal_removal_preserves_drop_disposition() {
     init_vanilla_registry();
-    let world = fresh_test_world("pending_terminal_menu_drop");
-    insert_ready_full_chunk(&world, ChunkPos::new(0, 0));
-    let player = test_player(Arc::clone(&world));
+    let world_fixture = fresh_test_world("pending_terminal_menu_drop");
+    let world = &world_fixture.world;
+    insert_ready_full_chunk(world, ChunkPos::new(0, 0));
+    let player = test_player(Arc::clone(world));
     *player.inventory_menu.lock().behavior_mut().carried_mut() =
         ItemStack::with_count(&vanilla_items::STONE, 2);
 
@@ -1749,9 +1752,10 @@ fn menu_open_stops_when_predecessor_removal_turns_terminal() {
 #[test]
 fn prepared_menu_is_cleaned_when_replacement_removal_turns_terminal() {
     init_vanilla_registry();
-    let world = fresh_test_world("prepared_menu_terminal_cleanup");
-    insert_ready_full_chunk(&world, ChunkPos::new(0, 0));
-    let player = test_player(Arc::clone(&world));
+    let world_fixture = fresh_test_world("prepared_menu_terminal_cleanup");
+    let world = &world_fixture.world;
+    insert_ready_full_chunk(world, ChunkPos::new(0, 0));
+    let player = test_player(Arc::clone(world));
     player.open_menu("Open terminal replacement", |context| {
         empty_test_menu(
             context.player,
@@ -1803,9 +1807,10 @@ fn prepared_menu_is_cleaned_when_replacement_removal_turns_terminal() {
 #[test]
 fn deferred_factory_is_not_run_when_earlier_close_turns_terminal() {
     init_vanilla_registry();
-    let world = fresh_test_world("deferred_open_terminal_cleanup");
-    insert_ready_full_chunk(&world, ChunkPos::new(0, 0));
-    let player = test_player(Arc::clone(&world));
+    let world_fixture = fresh_test_world("deferred_open_terminal_cleanup");
+    let world = &world_fixture.world;
+    insert_ready_full_chunk(world, ChunkPos::new(0, 0));
+    let player = test_player(Arc::clone(world));
     let transient = SimpleContainer::new(9).into_shared();
     transient
         .lock()
@@ -1952,4 +1957,25 @@ fn creative_crafting_grid_updates_the_result_slot() {
             .expect("result container is registered with the menu");
         assert!(result.get_item(0).is_empty());
     }
+}
+
+/// Vanilla decodes the set-beacon effect ids with `byIdOrThrow`, so "absent" and "unknown" must
+/// stay distinguishable. Collapsing an unknown id to `None` would let a crafted packet pass
+/// effect validation, consume the payment, and silently clear the configured effects.
+#[test]
+fn resolve_beacon_effect_separates_absent_from_unknown_ids() {
+    init_vanilla_registry();
+
+    assert_eq!(Player::resolve_beacon_effect(None), Ok(None));
+
+    let speed_id = vanilla_mob_effects::SPEED.id() as i32;
+    assert_eq!(
+        Player::resolve_beacon_effect(Some(speed_id))
+            .expect("known id resolves")
+            .map(|effect| effect.key.clone()),
+        Some(vanilla_mob_effects::SPEED.key.clone())
+    );
+
+    assert_eq!(Player::resolve_beacon_effect(Some(9999)), Err(()));
+    assert_eq!(Player::resolve_beacon_effect(Some(-1)), Err(()));
 }
