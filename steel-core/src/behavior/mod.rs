@@ -59,6 +59,11 @@ pub mod waxables;
 #[path = "generated/weathering.rs"]
 pub mod weathering;
 
+#[expect(warnings)]
+#[rustfmt::skip]
+#[path = "generated/skull_types.rs"]
+pub mod skull_types;
+
 pub use block::{
     BlockBehavior, BlockBehaviorRegistry, BlockCollisionBoxes, BlockCollisionContext,
     BlockEntityCreation, BlockLootContext, BrushableData, DefaultBlockBehavior, EntityFallDamage,
@@ -73,7 +78,7 @@ pub use context::{
 };
 pub use fluid::{FLUID_BEHAVIORS, FluidBehaviorRegistry};
 pub(crate) use item::apply_use_remainder;
-pub use item::{ItemBehavior, ItemBehaviorRegistry, ItemUseAnimation};
+pub use item::{ItemBehavior, ItemBehaviorRegistry, ItemUseAnimation, SignApplicator};
 use item_behaviors::register_item_behaviors;
 pub use items::{
     BlockItem, BucketItem, DefaultItemBehavior, DoubleHighBlockItem, EnderEyeItem, HangingSignItem,

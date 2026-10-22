@@ -50,7 +50,7 @@ impl Player {
         if !location_is_valid {
             log::warn!(
                 "Rejecting UseItemOnPacket from {}: location {:?} too far from block {:?}",
-                self.gameprofile.name,
+                self.gameprofile.name(),
                 location,
                 pos
             );
@@ -186,7 +186,9 @@ impl Player {
             return;
         }
 
-        let state = self.get_world().get_block_state(packet.pos);
+        let world = self.get_world();
+
+        let state = world.get_block_state(packet.pos);
         if state.is_air() {
             return;
         }
@@ -195,9 +197,13 @@ impl Player {
         let block_behaviors = &*BLOCK_BEHAVIORS;
         let behavior = block_behaviors.get_behavior(block);
 
+        let block_entity = world.get_block_entity(packet.pos);
+
         let include_data = self.has_infinite_materials() && packet.include_data;
 
-        let Some(item_stack) = behavior.get_clone_item_stack(block, state, include_data) else {
+        let Some(item_stack) =
+            behavior.get_clone_item_stack(block, state, block_entity, include_data)
+        else {
             return;
         };
 
@@ -265,10 +271,10 @@ impl Player {
             return;
         }
 
-        if sign.get_player_who_may_edit() != Some(self.gameprofile.id) {
+        if sign.get_player_who_may_edit() != Some(self.gameprofile.id()) {
             log::warn!(
                 "Player {} tried to edit sign they're not allowed to edit",
-                self.gameprofile.name
+                self.gameprofile.name()
             );
             return;
         }
@@ -305,7 +311,7 @@ impl Player {
         if let Some(block_entity) = world.get_block_entity(pos)
             && let Some(sign) = block_entity.downcast_ref::<SignBlockEntity>()
         {
-            sign.set_player_who_may_edit(Some(self.gameprofile.id));
+            sign.set_player_who_may_edit(Some(self.gameprofile.id()));
         }
 
         let state = world.get_block_state(pos);
